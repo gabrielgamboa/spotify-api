@@ -1,0 +1,20 @@
+{
+  "name": "spotify-lyrics",
+  "version": "1.0.0",
+  "description": "run a server that automatically detects the song being played on spotify and displays its lyrics",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Wali",
+  "license": "ISC",
+  "dependencies": {
+    "better-lyric-get": "^1.1.0",
+    "cors": "^2.8.4",
+    "dotenv": "^10.0.0",
+    "express": "^4.16.1",
+    "opn": "^5.1.0",
+    "spotify-web-api-node": "^2.5.0"
+  }
+}
