@@ -1,56 +1,45 @@
 require("dotenv").config();
 
-let SpotifyWebApi = require('spotify-web-api-node');
-let betterLyricGet = require("better-lyric-get");
+const { getSong } = require("genius-lyrics-api");
+const express = require('express');
+const cors = require('cors');
 
-let scopes = ['user-read-playback-state'],
-	state = 'spotify_auth_state';
-// Setting credentials can be done in the wrapper's constructor, or using the API object's setters.
-let spotifyApi = new SpotifyWebApi({
-	redirectUri: process.env.REDIRECT_URI,
-	clientId: process.env.CLIENT_ID,
-	clientSecret: process.env.CLIENT_SECRET
-});
+const spotifyApi = require("./config/spotifyConfig");
 
-// Create and open the authorization URL
-let authorizeURL = spotifyApi.createAuthorizeURL(scopes, state);
-let opn = require('opn');
-opn(authorizeURL);
-
-
-let express = require('express');
-let cors = require('cors')
-let app = express();
-let router = express.Router();
-
+const app = express();
+const router = express.Router();
 
 app.use(express.json());
 app.use(cors());
 
-
-//now we can set the route path & initialize the API
-router.get('/', function (req, res) {
-	// Get the currently playing
+router.get('/', (req, res) => {
 	spotifyApi.getMyCurrentPlaybackState()
-		.then(function (data) {
-			let [name, artist] = getSongArtist(data.body);
-			betterLyricGet.get(artist, name, function (err, lyrics) {
+		.then((data) => {
+			const [name, artist] = getSongArtist(data.body);
+
+			const options = {
+				apiKey: "5Us3yJvy-8vIoKjEQVxd25Ki8IY1zTJmsxDD38d-HA72CEUQWd6VfDvJtBCUiRiE",
+				title: name,
+				artist: artist
+			}
+
+			getSong(options).then(song => {
+				const { id, title, url } = song;
+				let { lyrics } = song;
+
 				res.type('text/html');
 				res.write('<head><title>Spotify Lyrics</title></head>');
 				res.write('<center>');
-				res.write('<h3>' + artist + ' - ' + name + '</h3>');
-				if (err) {
-					console.log(err + "aspodop");
-					res.write('Lyrics not found :(');
-				}
-				else {
-					lyrics = lyrics.replace(/(?:\r\n|\r|\n)/g, '<br />');
-					res.write(lyrics);
-				}
+				res.write('<h1>' + title + '</h1>');
+				lyrics = lyrics.replace(/(?:\r\n|\r|\n)/g, '<br />');
+				res.write(lyrics);
 				res.write('</center>');
 				res.end();
+				
+			}).catch(err => console.log(err));
 
-			});
+
+
 
 		}, function (err) {
 
@@ -70,7 +59,7 @@ router.get('/', function (req, res) {
 });
 
 router.get('/callback', function (req, res) {
-	let code = req.query['code'];
+	const code = req.query['code'];
 
 	spotifyApi.authorizationCodeGrant(code)
 		.then(function (data) {
@@ -87,7 +76,6 @@ router.get('/callback', function (req, res) {
 
 
 app.use('/', router);
-//starts the server and listens for requests
 app.listen(process.env.PORT || 3333, () => {
 	console.log(`Access localhost:${process.env.PORT} to see the lyrics for the currently played song`);
 });
@@ -95,7 +83,7 @@ app.listen(process.env.PORT || 3333, () => {
 
 
 function getSongArtist(body) {
-	let name = body.item.name;
-	let artist = body.item.artists['0'].name;
+	const name = body.item.name;
+	const artist = body.item.artists['0'].name;
 	return [name, artist];
 }
